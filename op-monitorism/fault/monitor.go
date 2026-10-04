@@ -175,9 +175,11 @@ func (m *Monitor) Run(ctx context.Context) {
 		return
 	}
 	proof := struct{ StorageHash common.Hash }{}
+	// Empty key list: only the account storage root is needed, but the param must be an array.
+	// A nil slice encodes as JSON null, which nodes reject with "Invalid params".
 	if err := m.l2Client.Client().CallContext(ctx, &proof, "eth_getProof",
-		predeploys.L2ToL1MessagePasserAddr, nil, hexutil.EncodeBig(block.Number())); err != nil {
-		m.log.Error("failed to query for proof response of l2ToL1MP contract", "err", err)
+		predeploys.L2ToL1MessagePasserAddr, []common.Hash{}, hexutil.EncodeBig(block.Number())); err != nil {
+		m.log.Error("failed to query for proof response of l2ToL1MP contract", "height", block.Number(), "err", err)
 		m.nodeConnectionFailures.WithLabelValues("l2", "getProof").Inc()
 		return
 	}
